@@ -10,7 +10,7 @@ from typing import TextIO
 
 def train(
     autoencoder:  nn.Module,
-    
+
     train_loader: DataLoader,
     val_loader:   DataLoader,
     criterion: nn.Module,
@@ -35,7 +35,7 @@ def train(
         raise ValueError("Training and validation datasets must not be empty")
     
     print(
-        "Epoch,TrainLoss,TrainAccuracy,ValLoss,ValAccuracy",
+        "Epoch,TrainLoss,ValLoss",
         file=log_dir,
         flush=True
     )
