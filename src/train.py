@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 from typing import TextIO
 
+
 def train(
     autoencoder:  nn.Module,
 
@@ -83,7 +84,7 @@ def train(
 
     return autoencoder
 
+
 def save_model(model: nn.Module, path: str) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), path)    
-

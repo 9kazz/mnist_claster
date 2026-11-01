@@ -1,0 +1,82 @@
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
+import sys
+from typing import TextIO
+
+from src.network import Autoencoder
+from src.visualization import show_mnist_img, show_embeddings
+
+
+def load_model(path: str, device: torch.device | str) -> Autoencoder:
+    autoencoder = Autoencoder().to(device)
+
+    state = torch.load(
+        path,
+        map_location=device,
+        weights_only=True
+    )
+
+    autoencoder.load_state_dict(state)
+    autoencoder.eval()
+
+    return autoencoder
+
+
+def run_benchmark(
+    autoencoder: nn.Module,
+    loader:      DataLoader,
+    criterion:   nn.Module,
+    device:      torch.device | str,
+    log_dir:     TextIO=sys.stdout,
+    num_pairs:   int | None = None,
+) -> float:
+    if num_pairs is not None and num_pairs < 0:
+        raise ValueError("num_pairs must be non-negative or None")
+
+    if len(loader.dataset) == 0:
+        raise ValueError("Benchmark dataset must not be empty")
+
+    device = torch.device(device)
+    autoencoder.to(device)
+    criterion.to(device)
+    autoencoder.eval()
+
+    total_loss = 0.0
+    examples   = []
+    embeddings = []
+    labels     = []
+
+    with torch.inference_mode():
+        for batch_img, batch_label in loader:
+            batch_img = batch_img.to(device)
+            
+            embedding     = autoencoder.encoder(batch_img)
+            reconstructed = autoencoder.decoder(embedding)
+            embeddings.append(embedding.detach().cpu())
+            labels.append(batch_label.detach().cpu())
+
+            batch_loss = criterion(reconstructed, batch_img)
+            total_loss += batch_loss.item() * batch_img.size(0)
+
+            # Save images for printing examples of reconstruction.
+            if num_pairs is not None and len(examples) // 2 < num_pairs:
+                count = min(num_pairs - len(examples) // 2, batch_img.size(0))
+                for idx in range(count):
+                    number   = batch_label[idx]
+                    original = batch_img[idx].detach().cpu().clone()
+                    restored = reconstructed[idx].detach().cpu().clone()
+                    examples.append((original, f"Original {number}"))
+                    examples.append((restored, f"Restored {number}"))
+
+    mean_loss = total_loss / len(loader.dataset)
+    print(f"Mean loss: {mean_loss:.6f}", file=log_dir, flush=True)
+
+    # Print examples of reconstruction.
+    if examples:
+        show_mnist_img(examples, title="Original and reconstructed images")
+
+    show_embeddings(torch.cat(embeddings, dim=0), torch.cat(labels, dim=0))
+
+    return mean_loss

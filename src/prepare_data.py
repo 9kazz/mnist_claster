@@ -6,6 +6,7 @@ from torch.utils.data import TensorDataset, random_split
 
 RANDOM_SEED = 42
 
+
 def create_mnist_datasets(
     data_dir: str,
     val_set_size: int = 5000,

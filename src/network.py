@@ -13,6 +13,7 @@ class Autoencoder(nn.Module):
         x = self.decoder(x)
         return x
 
+
 class Encoder(nn.Module):
     def __init__(self):
         super().__init__()
@@ -53,6 +54,7 @@ class Encoder(nn.Module):
         x = self.fc4(x)
 
         return x
+
 
 class Decoder(nn.Module):
     def __init__(self):
