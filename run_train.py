@@ -26,7 +26,7 @@ def main(
         shuffle=False
     )
 
-    autoencoder = Autoencoder()
+    autoencoder = Autoencoder().to(device)
     criterion   = torch.nn.MSELoss().to(device)
     optimizer   = torch.optim.Adam(autoencoder.parameters(), lr=1e-3)
 
