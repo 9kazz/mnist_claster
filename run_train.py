@@ -12,13 +12,13 @@ def main(
     log_dir:   Path,
     model_dir: Path,
     epoch:     int,
-    labeled_fraction: float = 0.1,
+    labeled: float = 0.1,
 ) -> None:
     train_dataset, val_dataset, _ = create_mnist_datasets("./data")
 
-    labeled_size = int(len(train_dataset) * labeled_fraction)
-    if not 0 < labeled_fraction <= 1 or labeled_size == 0:
-        raise ValueError("labeled_fraction must select at least one image and be at most 1")
+    labeled_size = int(len(train_dataset) * labeled)
+    if not 0 < labeled <= 1 or labeled_size == 0:
+        raise ValueError("labeled must select at least one image and be at most 1")
     
     labeled_dataset, _ = random_split(
         train_dataset,
@@ -63,13 +63,13 @@ if __name__ == "__main__":
     parser.add_argument("--labeled",                  type=float,        default=0.1,               help="Fraction of training images with labels")
     args = parser.parse_args()
 
-    if not 0 < args.labeled_fraction <= 1:
-        parser.error("--labeled-fraction must be in (0, 1]")
+    if not 0 < args.labeled <= 1:
+        parser.error("--labeled must be in (0, 1]")
 
     main(
         device=args.device,
         log_dir=args.log_dir,
         model_dir=args.model_dir,
         epoch=args.epoch,
-        labeled_fraction=args.labeled_fraction,
+        labeled=args.labeled,
     )
