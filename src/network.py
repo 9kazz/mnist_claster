@@ -5,8 +5,9 @@ class Autoencoder(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.encoder = Encoder()
-        self.decoder = Decoder()
+        self.encoder    = Encoder()
+        self.decoder    = Decoder()
+        self.classifier = Classifier()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.encoder(x)
@@ -94,3 +95,12 @@ class Decoder(nn.Module):
         x = self.act4(x)
 
         return x    
+
+
+class Classifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(2, 10)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.fc1(x)

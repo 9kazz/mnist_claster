@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 
 from src.prepare_data import *
 from src.network import *
@@ -11,28 +11,43 @@ def main(
     device:    torch.device,
     log_dir:   Path,
     model_dir: Path,
-    epoch:     int
+    epoch:     int,
+    labeled_fraction: float = 0.1,
 ) -> None:
     train_dataset, val_dataset, _ = create_mnist_datasets("./data")
 
-    train_loader = DataLoader(
+    labeled_size = int(len(train_dataset) * labeled_fraction)
+    if not 0 < labeled_fraction <= 1 or labeled_size == 0:
+        raise ValueError("labeled_fraction must select at least one image and be at most 1")
+    
+    labeled_dataset, _ = random_split(
+        train_dataset,
+        [labeled_size, len(train_dataset) - labeled_size],
+        generator=torch.Generator().manual_seed(RANDOM_SEED),
+    )
+
+    unlabeled_loader = DataLoader(
         train_dataset.tensors[0],
         batch_size=64,
         shuffle=True
     )
+    labeled_loader = DataLoader(
+        labeled_dataset,
+        batch_size=64,
+        shuffle=True
+    )
     val_loader = DataLoader(
-        val_dataset.tensors[0],
+        val_dataset,
         batch_size=64,
         shuffle=False
     )
 
     autoencoder = Autoencoder().to(device)
-    criterion   = torch.nn.MSELoss().to(device)
     optimizer   = torch.optim.Adam(autoencoder.parameters(), lr=1e-3)
 
     log_dir.parent.mkdir(parents=True, exist_ok=True)
     with log_dir.open("w", newline="") as train_log:
-        train(autoencoder, train_loader, val_loader, criterion, optimizer, num_epoch=epoch, device=device, log_dir=train_log)
+        train(autoencoder, unlabeled_loader, labeled_loader, val_loader, optimizer, num_epoch=epoch, device=device, log_dir=train_log)
 
     save_model(autoencoder, str(model_dir))
 
@@ -44,12 +59,17 @@ if __name__ == "__main__":
     parser.add_argument("--device",                   type=torch.device, default="cuda",            help="cpu, cuda or cuda:0")
     parser.add_argument("--log-dir",   "--log_dir",   type=Path,         default=Path("train.csv"), help="Output log path")
     parser.add_argument("--model-dir", "--model_dir", type=Path,         default=Path("model.pt"),  help="Model output path")
-    parser.add_argument("--epoch",                    type=int,          default=50,                help="Number of training epoches")
+    parser.add_argument("--epoch",                    type=int,          default=50,                help="Number of training epochs")
+    parser.add_argument("--labeled",                  type=float,        default=0.1,               help="Fraction of training images with labels")
     args = parser.parse_args()
+
+    if not 0 < args.labeled_fraction <= 1:
+        parser.error("--labeled-fraction must be in (0, 1]")
 
     main(
         device=args.device,
         log_dir=args.log_dir,
         model_dir=args.model_dir,
-        epoch=args.epoch
+        epoch=args.epoch,
+        labeled_fraction=args.labeled_fraction,
     )

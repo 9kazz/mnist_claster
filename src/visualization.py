@@ -6,35 +6,49 @@ import matplotlib.pyplot as plt
 
 def read_train_log(path: str) -> dict:
     metrics = {
-        "Epoch":     [],
-        "TrainLoss": [],
-        "ValLoss":   [],
+        "Epoch":            [],
+        "TrainLoss":        [],
+        "ValLoss":          [],
+        "TrainLabeledLoss": [],
+        "ValLabeledLoss" :  [],
     }
 
     with open(path, "r", newline="") as file:
         reader = csv.DictReader(file)
+
         for row in reader:
             metrics["Epoch"].append(int(row["Epoch"]))
-            metrics["TrainLoss"].append(float(row["TrainLoss"]))
-            metrics["ValLoss"].append(float(row["ValLoss"]))
+            for key in metrics:
+                if key != "Epoch":
+                    metrics[key].append(float(row[key]))
 
     return metrics
 
 
 def show_train_log_plot(metrics: dict, path: str | None = None) -> None:
-    fig, ax = plt.subplots(figsize=(10, 6), layout="constrained")
+    nrows = 2
+    fig, axes = plt.subplots(nrows, 1, figsize=(16, 7 * nrows),
+                             squeeze=False, layout="constrained")
 
-    ax.plot(metrics["Epoch"], metrics["TrainLoss"], label="Train")
+    ax = axes[0, 0]
+    ax.plot(metrics["Epoch"], metrics["TrainLoss"], label="Train (all images)")
     ax.plot(metrics["Epoch"], metrics["ValLoss"],   label="Validation")
     ax.set_title("Reconstruction loss")
-    ax.set_xlabel("Epoch")
     ax.set_ylabel("MSE")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+
+    ax = axes[1, 0]
+    ax.plot(metrics["Epoch"], metrics["TrainLabeledLoss"], label="Train (labeled subset)")
+    ax.plot(metrics["Epoch"], metrics["ValLabeledLoss"],   label="Validation")
+    ax.set_title("Reconstruction + classification loss")
+    ax.set_ylabel("MSE + CrossEntropy")
+
+    for ax in axes.flat:
+        ax.set_xlabel("Epoch")
+        ax.legend()
+        ax.grid(True, alpha=0.3)
 
     if path is not None:
         fig.savefig(path, dpi=150)
-    
     plt.show()
 
 
@@ -87,7 +101,7 @@ def show_embeddings(
 ) -> None:
     embeddings = embeddings.detach().cpu()
     labels = labels.detach().cpu()
-    fig, ax = plt.subplots(figsize=(8, 8), layout="constrained")
+    fig, ax = plt.subplots(figsize=(16, 16), layout="constrained")
 
     colors = plt.get_cmap("tab10")
     for digit in range(10):
