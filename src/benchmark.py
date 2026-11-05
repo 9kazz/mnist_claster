@@ -2,26 +2,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-import sys
-from typing import TextIO
+from pathlib import Path
 
 from src.network import Autoencoder
+from src.clustering import kmeans
 from src.visualization import show_mnist_img, show_embeddings
-
-
-def load_model(path: str, device: torch.device | str) -> Autoencoder:
-    autoencoder = Autoencoder().to(device)
-
-    state = torch.load(
-        path,
-        map_location=device,
-        weights_only=True
-    )
-
-    autoencoder.load_state_dict(state)
-    autoencoder.eval()
-
-    return autoencoder
 
 
 def run_benchmark(
@@ -29,7 +14,7 @@ def run_benchmark(
     loader:      DataLoader,
     criterion:   nn.Module,
     device:      torch.device | str,
-    log_dir:     TextIO=sys.stdout,
+    log_dir:     Path | None = None,
     num_pairs:   int | None = None,
 ) -> float:
     if num_pairs is not None and num_pairs < 0:
@@ -37,6 +22,9 @@ def run_benchmark(
 
     if len(loader.dataset) == 0:
         raise ValueError("Benchmark dataset must not be empty")
+
+    if log_dir is not None:
+        log_dir.mkdir(parents=True, exist_ok=True)
 
     device = torch.device(device)
     autoencoder.to(device)
@@ -71,12 +59,17 @@ def run_benchmark(
                     examples.append((restored, f"Restored {number}"))
 
     mean_loss = total_loss / len(loader.dataset)
-    print(f"Mean loss: {mean_loss:.6f}", file=log_dir, flush=True)
+    print(f"Mean loss: {mean_loss:.6f}", flush=True)
 
     # Print examples of reconstruction.
     if examples:
-        show_mnist_img(examples, title="Original and reconstructed images")
+        path = log_dir / "reconstructions.png" if log_dir is not None else None
+        show_mnist_img(examples, path=path, title="Original and reconstructed images")
 
-    show_embeddings(torch.cat(embeddings, dim=0), torch.cat(labels, dim=0))
+    path = log_dir / "embeddings.png" if log_dir is not None else None
+    embeddings = torch.cat(embeddings, dim=0)
+    labels = torch.cat(labels, dim=0)
+    # _, centers = kmeans(embeddings, num_clusters=min(10, len(embeddings)))
+    show_embeddings(embeddings, labels, path=path)
 
     return mean_loss

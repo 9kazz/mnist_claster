@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader, random_split
 from src.prepare_data import *
 from src.network import *
 from src.train import *
+from src.store_model import *
 
 def main(
     device:    torch.device,

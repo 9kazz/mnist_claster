@@ -24,16 +24,13 @@ def main(
     autoencoder = load_model(str(model_dir), device=device)
     criterion   = torch.nn.MSELoss().to(device)
 
-    if log_dir is None:
-        run_benchmark(autoencoder, loader, criterion, device=device, num_pairs=num_pairs)
-    else:
-        log_dir.parent.mkdir(parents=True, exist_ok=True)
-        with log_dir.open("w") as benchmark_log:
-            run_benchmark(autoencoder, loader, criterion, device=device, log_dir=benchmark_log, num_pairs=num_pairs)
+    run_benchmark(autoencoder, loader, criterion, device=device,
+                  log_dir=log_dir, num_pairs=num_pairs)
 
     if train_log is not None:
         metrics = read_train_log(train_log)
-        show_train_log_plot(metrics)
+        path = log_dir / "loss.png" if log_dir is not None else None
+        show_train_log_plot(metrics, path=path)
 
 
 if __name__ == "__main__":
@@ -42,7 +39,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--device",                   type=torch.device, default="cuda", help="cpu, cuda or cuda:0")
     parser.add_argument("--train-log", "--train_log", type=Path,         default=None,   help="Plot train/validation losses from CSV")
-    parser.add_argument("--log-dir",   "--log_dir",   type=Path,         default=None,   help="Output log path; omit to print to stdout")
+    parser.add_argument("--log-dir",   "--log_dir",   type=Path,         default=None,   help="Directory for plot images; omit to only display them")
     parser.add_argument("--model-dir", "--model_dir", type=Path,         default=None,   help="Model weights path")
     parser.add_argument("--num-pairs", "--num_pairs", type=int,          default=None,   help="Show the first N original/reconstructed pairs")
     args = parser.parse_args()
