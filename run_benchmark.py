@@ -4,7 +4,8 @@ import torch
 from torch.utils.data import DataLoader
 
 from src.prepare_data import create_mnist_datasets
-from src.benchmark import load_model, run_benchmark
+from src.benchmark import run_benchmark
+from src.store_model import load_model
 from src.visualization import read_train_log, show_train_log_plot
 
 
