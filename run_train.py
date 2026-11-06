@@ -3,18 +3,22 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, random_split
 
-from src.prepare_data import *
-from src.network import *
-from src.train import *
-from src.store_model import *
+from src.prepare_data import create_mnist_datasets, RANDOM_SEED
+from src.network      import Autoencoder
+from src.train        import train
+from src.store_model  import save_model
 
 def main(
     device:    torch.device,
     log_dir:   Path,
     model_dir: Path,
     epoch:     int,
-    labeled: float = 0.1,
+    labeled:   float = 0.1,
 ) -> None:
+
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available; use --device cpu")
+        
     train_dataset, val_dataset, _ = create_mnist_datasets("./data")
 
     labeled_size = int(len(train_dataset) * labeled)

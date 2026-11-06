@@ -1,8 +1,9 @@
 import torch
+import torch.nn as nn
 import matplotlib.pyplot as plt
 
 from torchvision import datasets
-from torch.utils.data import TensorDataset, random_split
+from torch.utils.data import TensorDataset, DataLoader, random_split
 
 RANDOM_SEED = 42
 
@@ -64,3 +65,30 @@ def create_mnist_datasets(
     )
 
     return train_tensors, val_tensors, test_tensors
+
+
+def make_embeddings_tensor(
+        loader:  DataLoader,
+        encoder: nn.Module,
+        device: torch.device | str,
+) -> tuple[torch.Tensor, torch.Tensor]:
+
+    device = torch.device(device)
+    encoder.eval()
+
+    with torch.inference_mode():
+        embeddings = []
+        labels     = []
+
+        for batch_img, batch_labels in loader:
+            batch_img = batch_img.to(device)
+
+            batch_embeddings = encoder(batch_img)
+
+            embeddings.append(batch_embeddings.cpu())
+            labels.append(batch_labels.cpu())
+
+        embeddings = torch.cat(embeddings, dim=0)
+        labels     = torch.cat(labels, dim=0)
+    
+    return embeddings, labels

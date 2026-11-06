@@ -27,8 +27,8 @@ def train(
         ):
             raise ValueError("Move the autoencoder to device before creating the optimizer")
 
-    coef_class = 1
-    coef_geom  = 0.1
+    COEF_CLASS = 1
+    COEF_GEOM  = 0.1
     reconstruction_crit = nn.MSELoss().to(device)
     classification_crit = nn.CrossEntropyLoss().to(device)
 
@@ -47,13 +47,13 @@ def train(
         )
         train_labeled_loss = train_classification(
             autoencoder, labeled_loader, optimizer,
-            reconstruction_crit, classification_crit, device, coef_class
+            reconstruction_crit, classification_crit, device, COEF_CLASS
         )
         train_geometry_loss = train_geometry(
-            autoencoder, labeled_loader, optimizer, device, coef_geom
+            autoencoder, labeled_loader, optimizer, device, COEF_GEOM
         )
         val_unlabeled_loss, val_labeled_loss, val_geometry_loss = validate(
-            autoencoder, val_loader, reconstruction_crit, classification_crit, device, coef_class
+            autoencoder, val_loader, reconstruction_crit, classification_crit, device, COEF_CLASS
         )
 
         print(
@@ -98,7 +98,7 @@ def train_classification(
     reconstruction_crit: nn.Module,
     classification_crit: nn.Module,
     device: torch.device | str,
-    coef_class: float,
+    COEF_CLASS: float,
 ) -> float:
     autoencoder.train()
     total_loss = 0.0
@@ -114,7 +114,7 @@ def train_classification(
 
         classification_loss = classification_crit(pred_class, label)
         reconstruction_loss = reconstruction_crit(reconstructed, batch_img)
-        batch_loss = reconstruction_loss + coef_class * classification_loss
+        batch_loss = reconstruction_loss + COEF_CLASS * classification_loss
         total_loss += batch_loss.item() * batch_img.size(0)
 
         batch_loss.backward()
@@ -127,8 +127,8 @@ def train_geometry(
     autoencoder: nn.Module,
     loader:      DataLoader,
     optimizer:   torch.optim.Optimizer,
-    device: torch.device | str,
-    coef_geom: float,
+    device:      torch.device | str,
+    coef_geom:   float,
 ) -> float:
     autoencoder.train()
     optimizer.zero_grad()
@@ -159,7 +159,7 @@ def validate(
     reconstruction_crit: nn.Module,
     classification_crit: nn.Module,
     device: torch.device | str,
-    coef_class: float,
+    COEF_CLASS: float,
 ) -> tuple[float, float, float]:
     autoencoder.eval()
     reconstruction_total = 0.0
@@ -181,7 +181,7 @@ def validate(
             classification_loss = classification_crit(pred_class, label)
             reconstruction_loss = reconstruction_crit(reconstructed, batch_img)
 
-            total_loss = reconstruction_loss + coef_class * classification_loss
+            total_loss = reconstruction_loss + COEF_CLASS * classification_loss
 
             reconstruction_total += reconstruction_loss.item() * batch_img.size(0)
             labeled_total += total_loss.item() * batch_img.size(0)
