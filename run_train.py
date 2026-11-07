@@ -34,12 +34,18 @@ def main(
     unlabeled_loader = DataLoader(
         RotatedDataset(train_dataset, max_angle=10, image_only=True),
         batch_size=64,
-        shuffle=True
+        shuffle=True,
+        num_workers=4,
+        persistent_workers=True,
+        pin_memory=(device.type == "cuda"),
     )
     labeled_loader = DataLoader(
         RotatedDataset(labeled_dataset, max_angle=10),
         batch_size=64,
-        shuffle=True
+        shuffle=True,
+        num_workers=4,
+        persistent_workers=True,
+        pin_memory=(device.type == "cuda"),
     )
     val_loader = DataLoader(
         val_dataset,

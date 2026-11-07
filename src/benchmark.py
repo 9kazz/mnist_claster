@@ -46,6 +46,9 @@ def run_benchmark(
     total_labeled_loss = 0.0
     class_correct      = 0
     knn_correct        = 0
+    class_total        = torch.zeros(10, dtype=torch.long)
+    class_correct_by_digit = torch.zeros(10, dtype=torch.long)
+    knn_correct_by_digit   = torch.zeros(10, dtype=torch.long)
     examples   = []
     embeddings = []
     labels     = []
@@ -77,8 +80,20 @@ def run_benchmark(
             labeled_loss = batch_loss + classification_loss
             total_labeled_loss += labeled_loss.item() * batch_img.size(0)
 
-            class_correct += (pred_classifier.argmax(dim=1) == batch_label).sum().item()
-            knn_correct   += (pred_knn.to(device) == batch_label).sum().item()
+            classifier_pred = pred_classifier.argmax(dim=1)
+            knn_pred = pred_knn.to(device)
+            class_correct += (classifier_pred == batch_label).sum().item()
+            knn_correct   += (knn_pred == batch_label).sum().item()
+
+            # Accumulate totals and correct predictions separately for every digit.
+            batch_labels_cpu = batch_label.cpu()
+            class_total += torch.bincount(batch_labels_cpu, minlength=10)
+            class_correct_by_digit += torch.bincount(
+                batch_labels_cpu[classifier_pred.cpu() == batch_labels_cpu], minlength=10
+            )
+            knn_correct_by_digit += torch.bincount(
+                batch_labels_cpu[knn_pred.cpu() == batch_labels_cpu], minlength=10
+            )
 
             # Save images for printing examples of reconstruction.
             if num_pairs is not None and len(examples) // 2 < num_pairs:
@@ -95,15 +110,27 @@ def run_benchmark(
 
     mean_loss = total_loss / len(loader.dataset)
     mean_labeled_loss = total_labeled_loss / len(loader.dataset)
-    geometry_loss = compute_geometry_loss(embeddings, labels).item()
+    geometry_loss  = compute_geometry_loss(embeddings, labels).item()
+
     class_accuracy = class_correct / len(loader.dataset)
-    knn_accuracy = knn_correct / len(loader.dataset)
+    knn_accuracy   = knn_correct   / len(loader.dataset)
+    class_accuracy_by_digit = class_correct_by_digit.float() / class_total.clamp_min(1).float()
+    knn_accuracy_by_digit   = knn_correct_by_digit.float()   / class_total.clamp_min(1).float()
+
+    classifier_by_digit = ", ".join(
+        f"{digit}: {class_accuracy_by_digit[digit]:.2%}" for digit in range(10)
+    )
+    knn_by_digit = ", ".join(
+        f"{digit}: {knn_accuracy_by_digit[digit]:.2%}" for digit in range(10)
+    )
     print(
         f"Reconstruction loss: {mean_loss:.6f}\n"
         f"Reconstruction + classification loss: {mean_labeled_loss:.6f}\n"
         f"Geometry loss: {geometry_loss:.6f}\n"
         f"Classifier accuracy: {class_accuracy:.2%}\n"
-        f"kNN accuracy: {knn_accuracy:.2%}",
+        f"Classifier accuracy by class: {classifier_by_digit}\n"
+        f"kNN accuracy: {knn_accuracy:.2%}\n"
+        f"kNN accuracy by class: {knn_by_digit}",
         flush=True
     )
 

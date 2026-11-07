@@ -18,7 +18,7 @@ class RotatedDataset(Dataset):
         self.rotation = RandomRotation(
             degrees=max_angle,
             interpolation=InterpolationMode.BILINEAR,
-            fill=False,
+            fill=0,
         )
 
     def __len__(self):
