@@ -42,16 +42,12 @@ def main(
         train_dataset,
         batch_size=64,
         shuffle=True,
-        num_workers=4,
-        persistent_workers=True,
         pin_memory=(device.type == "cuda"),
     )
     labeled_loader = DataLoader(
         labeled_dataset,
         batch_size=64,
         shuffle=True,
-        num_workers=4,
-        persistent_workers=True,
         pin_memory=(device.type == "cuda"),
     )
     val_loader = DataLoader(
