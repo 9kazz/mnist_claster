@@ -35,6 +35,8 @@ def main(
     if rotation:
         train_dataset   = RotatedDataset(train_dataset,   max_angle=10, image_only=True)
         labeled_dataset = RotatedDataset(labeled_dataset, max_angle=10)
+    else:
+        train_dataset   = train_dataset.tensors[0]
 
     unlabeled_loader = DataLoader(
         train_dataset,
