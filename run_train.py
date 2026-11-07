@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-dir", "--model_dir", type=Path,         default=Path("model.pt"),  help="Model output path")
     parser.add_argument("--epoch",                    type=int,          default=50,                help="Number of training epochs")
     parser.add_argument("--labeled",                  type=float,        default=0.1,               help="Fraction of training images with labels")
-    parser.add_argument("--rotation",                 action="store_trueпоче",                          help="Enable rotation augmentation")
+    parser.add_argument("--rotation",                 action="store_true",                          help="Enable rotation augmentation")
     args = parser.parse_args()
 
     if not 0 < args.labeled <= 1:
