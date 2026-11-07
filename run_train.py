@@ -13,7 +13,8 @@ def main(
     log_dir:   Path,
     model_dir: Path,
     epoch:     int,
-    labeled:   float = 0.1,
+    rotation:  bool,
+    labeled:   float,
 ) -> None:
 
     if device.type == "cuda" and not torch.cuda.is_available():
@@ -31,8 +32,12 @@ def main(
         generator=torch.Generator().manual_seed(RANDOM_SEED),
     )
 
+    if rotation:
+        train_dataset   = RotatedDataset(train_dataset,   max_angle=10, image_only=True)
+        labeled_dataset = RotatedDataset(labeled_dataset, max_angle=10)
+
     unlabeled_loader = DataLoader(
-        RotatedDataset(train_dataset, max_angle=10, image_only=True),
+        train_dataset,
         batch_size=64,
         shuffle=True,
         num_workers=4,
@@ -40,7 +45,7 @@ def main(
         pin_memory=(device.type == "cuda"),
     )
     labeled_loader = DataLoader(
-        RotatedDataset(labeled_dataset, max_angle=10),
+        labeled_dataset,
         batch_size=64,
         shuffle=True,
         num_workers=4,
@@ -72,15 +77,17 @@ if __name__ == "__main__":
     parser.add_argument("--model-dir", "--model_dir", type=Path,         default=Path("model.pt"),  help="Model output path")
     parser.add_argument("--epoch",                    type=int,          default=50,                help="Number of training epochs")
     parser.add_argument("--labeled",                  type=float,        default=0.1,               help="Fraction of training images with labels")
+    parser.add_argument("--rotation",                 type=bool,         default=False,             help="Rotation augmentation switch")
     args = parser.parse_args()
 
     if not 0 < args.labeled <= 1:
         parser.error("--labeled must be in (0, 1]")
 
     main(
-        device=args.device,
-        log_dir=args.log_dir,
-        model_dir=args.model_dir,
-        epoch=args.epoch,
-        labeled=args.labeled,
+        device    = args.device,
+        log_dir   = args.log_dir,
+        model_dir = args.model_dir,
+        epoch     = args.epoch,
+        labeled   = args.labeled,
+        rotation  = args.rotation,
     )

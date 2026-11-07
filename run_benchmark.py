@@ -81,10 +81,10 @@ if __name__ == "__main__":
         parser.error("--num-pairs must be non-negative")
 
     main(
-        device=args.device,
-        train_log=args.train_log,
-        log_dir=args.log_dir,
-        model_dir=args.model_dir,
-        num_pairs=args.num_pairs,
-        knn_set=args.knn_set,
+        device    = args.device,
+        train_log = args.train_log,
+        log_dir   = args.log_dir,
+        model_dir = args.model_dir,
+        num_pairs = args.num_pairs,
+        knn_set   = args.knn_set,
     )
