@@ -28,9 +28,10 @@ def train(
             raise ValueError("Move the autoencoder to device before creating the optimizer")
 
     COEF_CLASS = 1
-    COEF_GEOM  = 0.1
-    reconstruction_crit = nn.MSELoss().to(device)
-    classification_crit = nn.CrossEntropyLoss().to(device)
+    COEF_GEOM  = 100
+
+    reconstruction_crit = nn.MSELoss()
+    classification_crit = nn.CrossEntropyLoss()
 
     if any(len(loader.dataset) == 0 for loader in (unlabeled_loader, labeled_loader, val_loader)):
         raise ValueError("Training and validation datasets must not be empty")
@@ -66,7 +67,7 @@ def train(
 
     return autoencoder
 
-
+# Uses either labeled and unlabeled parts of dataset
 def train_reconstruction(
     autoencoder: nn.Module,
     loader:      DataLoader,
@@ -91,6 +92,7 @@ def train_reconstruction(
     return total_loss / len(loader.dataset)
 
 
+# Uses only labeled part of dataset
 def train_classification(
     autoencoder: nn.Module,
     loader:      DataLoader,
@@ -122,7 +124,7 @@ def train_classification(
 
     return total_loss / len(loader.dataset)
 
-
+# Uses either labeled and unlabeled parts of dataset
 def train_geometry(
     autoencoder: nn.Module,
     loader:      DataLoader,
@@ -151,6 +153,30 @@ def train_geometry(
         optimizer.step()
 
     return geometry_loss.item()
+
+
+def compute_geometry_loss(latents: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    digits = labels.unique()
+    if len(digits) < 2:
+        return latents.sum() * 0.0
+
+    # Compute class centers
+    centers = torch.stack([
+        latents[labels == digit].mean(dim=0)
+        for digit in digits
+    ])
+
+    # Mean variance within each class
+    within_variance = torch.stack([
+        ((latents[labels == digit] - centers[index]) ** 2).mean(dim=0).sum()
+        for index, digit in enumerate(digits)
+    ]).mean()
+
+    # Variance of class centers
+    global_center = centers.mean(dim=0)
+    between_variance = ((centers - global_center) ** 2).mean(dim=0).sum()
+
+    return within_variance / (between_variance + 1e-8)
 
 
 def validate(
@@ -195,27 +221,3 @@ def validate(
         labeled_total / len(loader.dataset),
         geometry_loss,
     )
-
-
-def compute_geometry_loss(latents: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-    digits = labels.unique()
-    if len(digits) < 2:
-        return latents.sum() * 0.0
-
-    # Compute class centers
-    centers = torch.stack([
-        latents[labels == digit].mean(dim=0)
-        for digit in digits
-    ])
-
-    # Mean variance within each class
-    within_variance = torch.stack([
-        ((latents[labels == digit] - centers[index]) ** 2).mean(dim=0).sum()
-        for index, digit in enumerate(digits)
-    ]).mean()
-
-    # Variance of class centers
-    global_center = centers.mean(dim=0)
-    between_variance = ((centers - global_center) ** 2).mean(dim=0).sum()
-
-    return within_variance / (between_variance + 1e-8)

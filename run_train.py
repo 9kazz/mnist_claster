@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, random_split
 
-from src.prepare_data import create_mnist_datasets, RANDOM_SEED
+from src.prepare_data import RotatedDataset, create_mnist_datasets, RANDOM_SEED
 from src.network      import Autoencoder
 from src.train        import train
 from src.store_model  import save_model
@@ -32,12 +32,12 @@ def main(
     )
 
     unlabeled_loader = DataLoader(
-        train_dataset.tensors[0],
+        RotatedDataset(train_dataset, max_angle=10, image_only=True),
         batch_size=64,
         shuffle=True
     )
     labeled_loader = DataLoader(
-        labeled_dataset,
+        RotatedDataset(labeled_dataset, max_angle=10),
         batch_size=64,
         shuffle=True
     )

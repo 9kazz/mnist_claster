@@ -2,15 +2,41 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-from torchvision import datasets
-from torch.utils.data import TensorDataset, DataLoader, random_split
+from torchvision            import datasets
+from torchvision.transforms import RandomRotation, InterpolationMode
+from torch.utils.data       import Dataset, TensorDataset, DataLoader, random_split
 
 RANDOM_SEED = 42
 
+class RotatedDataset(Dataset):
+    def __init__(self, dataset, max_angle=10, image_only=False):
+        super().__init__()
+
+        self.dataset    = dataset
+        self.image_only = image_only
+
+        self.rotation = RandomRotation(
+            degrees=max_angle,
+            interpolation=InterpolationMode.BILINEAR,
+            fill=False,
+        )
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        image, label = self.dataset[idx]
+        image = self.rotation(image)
+
+        if self.image_only:
+            return image
+
+        return image, label
+    
 
 def create_mnist_datasets(
-    data_dir: str,
-    val_set_size: int = 5000,
+    data_dir:       str,
+    val_set_size:   int = 5000,
     mnist_set_size: int | None = None
 ) -> tuple[TensorDataset, TensorDataset, TensorDataset]:
     """Prepare normalized datasets on CPU; training transfers individual batches."""
