@@ -28,7 +28,7 @@ def train(
             raise ValueError("Move the autoencoder to device before creating the optimizer")
 
     COEF_CLASS = 1
-    COEF_GEOM  = 100
+    COEF_GEOM  = 3
 
     reconstruction_crit = nn.MSELoss()
     classification_crit = nn.CrossEntropyLoss()
