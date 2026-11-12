@@ -152,7 +152,7 @@ class Decoder(nn.Module):
 
 | Доля разметки: 5%  |  Доля разметки: 10% |
 |---|---|
-| ![image](readme_img/readme_img/emb_autoenc60ep_5lab.png) | ![image](readme_img/emb_autoenc60ep_10lab.png) |
+| ![image](readme_img/emb_autoenc60ep_5lab.png) | ![image](readme_img/emb_autoenc60ep_10lab.png) |
 
 
 Кластеры в пространстве эмбеддингов сложно выделить чисто визуально. Впрочем, мы ведь собирались классифицировать изображения, а не только рисовать красивые диаграммы. Посмотрим, какую точность даст kNN.
@@ -411,7 +411,7 @@ $$\boxed{\beta = 2}$$
 | 10%  | 5 500 | 90 | 91,12% | 92,08% | **95,70%** |
 
 Любопытно отдельно посмотреть на предельную точность CNN, достигнутую при полной разметки всего датасета:
-$$\boxed{98,32\% }$$
+$$\boxed{98.32\%}$$
 
 ![CNN 2D против лучших результатов kNN](readme_img/supervised_cnn_vs_best_embeddings.png)
 
